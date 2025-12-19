@@ -114,36 +114,44 @@ async def upload_documents(files: List[UploadFile] = File(...)):
 
 async def process_document(doc_id: str, file_path: str):
     """
-    Process document in background
+    Process document in background and upload to Neo4j
     """
     try:
-        # Simulate processing delay
-        await asyncio.sleep(2)
+        print(f"📤 Starting processing for document {doc_id}: {file_path}")
         
-        # Run Neo4j upload (this will process the PDF)
-        success = await upload()
+        # Run Neo4j upload with the actual file path
+        success = await upload(file_path)
         
         # Update document status
         for doc in documents_db:
             if doc["id"] == doc_id:
                 doc["status"] = "indexed" if success else "error"
+                print(f"✅ Document {doc_id} status updated to: {doc['status']}")
                 break
         
-        # Update stats
+        # Update stats if successful
         if success:
             stats_db["documents"] += 1
+            # TODO: Get actual entity and relationship counts from Neo4j
             stats_db["entities"] += 12  # Mock value
             stats_db["relationships"] += 8  # Mock value
+            print(f"📊 Stats updated: {stats_db}")
         
-        # Clean up temp file
+        # Clean up temp file after processing
         try:
-            os.remove(file_path)
-            os.rmdir(os.path.dirname(file_path))
-        except:
-            pass
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                temp_dir = os.path.dirname(file_path)
+                if os.path.exists(temp_dir):
+                    os.rmdir(temp_dir)
+                print(f"🗑️ Cleaned up temp file: {file_path}")
+        except Exception as cleanup_error:
+            print(f"⚠️ Cleanup warning: {cleanup_error}")
             
     except Exception as e:
-        print(f"Error processing document {doc_id}: {e}")
+        print(f"❌ Error processing document {doc_id}: {e}")
+        import traceback
+        traceback.print_exc()
         for doc in documents_db:
             if doc["id"] == doc_id:
                 doc["status"] = "error"

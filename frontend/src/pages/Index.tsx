@@ -109,6 +109,20 @@ const Index = () => {
     }
   }, [toast]);
 
+  const handleNewChat = useCallback(() => {
+    // Clear messages
+    setMessages([]);
+    
+    // Generate new session ID
+    const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    sessionStorage.setItem('knowledgeforge_session_id', newSessionId);
+    
+    toast({
+      title: "New chat started",
+      description: "Previous conversation cleared. Your memories are preserved.",
+    });
+  }, [toast]);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -136,6 +150,7 @@ const Index = () => {
               messages={messages}
               isTyping={isTyping}
               onSendMessage={handleSendMessage}
+              onNewChat={handleNewChat}
               hasDocuments={documents.length > 0}
             />
           </div>

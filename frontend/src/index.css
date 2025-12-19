@@ -83,6 +83,27 @@
   .upload-zone-active {
     @apply border-primary bg-primary/10 glow-primary;
   }
+
+  /* Chat message enhancements */
+  .chat-message-content {
+    @apply text-sm leading-relaxed;
+  }
+
+  .chat-message-content h3 {
+    @apply text-base font-semibold mt-3 mb-2 text-foreground;
+  }
+
+  .chat-message-content strong {
+    @apply font-semibold text-foreground;
+  }
+
+  .chat-message-content a {
+    @apply text-primary hover:underline transition-colors;
+  }
+
+  .chat-message-content code {
+    @apply bg-muted/50 px-1.5 py-0.5 rounded text-xs font-mono;
+  }
 }
 
 @layer utilities {

@@ -1,14 +1,26 @@
-import { useEffect, useRef } from 'react';
-import { Sparkles } from 'lucide-react';
-import ChatMessage from './ChatMessage';
-import ChatInput from './ChatInput';
-import TypingIndicator from './TypingIndicator';
 import type { ChatMessage as Message } from '@/types';
+import { Plus, Sparkles } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import ChatInput from './ChatInput';
+import ChatMessage from './ChatMessage';
+import TypingIndicator from './TypingIndicator';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from './ui/alert-dialog';
+import { Button } from './ui/button';
 
 interface ChatPanelProps {
   messages: Message[];
   isTyping: boolean;
   onSendMessage: (message: string) => void;
+  onNewChat: () => void;
   hasDocuments: boolean;
 }
 
@@ -42,20 +54,68 @@ const WelcomeMessage = () => (
   </div>
 );
 
-const ChatPanel = ({ messages, isTyping, onSendMessage, hasDocuments }: ChatPanelProps) => {
+const ChatPanel = ({ messages, isTyping, onSendMessage, onNewChat, hasDocuments }: ChatPanelProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [showNewChatDialog, setShowNewChatDialog] = useState(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
+  const handleNewChatClick = () => {
+    if (messages.length > 0) {
+      setShowNewChatDialog(true);
+    } else {
+      onNewChat();
+    }
+  };
+
+  const confirmNewChat = () => {
+    setShowNewChatDialog(false);
+    onNewChat();
+  };
+
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
+    <div className="flex flex-col h-full bg-background/30 backdrop-blur-sm">
+      {/* Header with New Chat button */}
+      {messages.length > 0 && (
+        <div className="flex items-center justify-between p-4 border-b border-border/50 bg-background/50 backdrop-blur-md">
+          <h3 className="text-sm font-medium text-foreground">Chat</h3>
+          <Button
+            onClick={handleNewChatClick}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            New Chat
+          </Button>
+        </div>
+      )}
+
+      {/* New Chat Confirmation Dialog */}
+      <AlertDialog open={showNewChatDialog} onOpenChange={setShowNewChatDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Start a new chat?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will clear the current conversation. Your memories and document knowledge will be preserved.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmNewChat}>
+              Start New Chat
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
         {messages.length === 0 && !isTyping ? (
           <WelcomeMessage />
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6 max-w-4xl mx-auto">
             {messages.map((msg) => (
               <ChatMessage key={msg.id} message={msg} />
             ))}
@@ -65,13 +125,15 @@ const ChatPanel = ({ messages, isTyping, onSendMessage, hasDocuments }: ChatPane
         )}
       </div>
       
-      <div className="p-4 border-t border-border/50">
+      <div className="p-4 border-t border-border/50 bg-background/50 backdrop-blur-md">
         {!hasDocuments && messages.length === 0 && (
           <p className="text-xs text-muted-foreground text-center mb-3">
             Upload documents to unlock full capabilities
           </p>
         )}
-        <ChatInput onSendMessage={onSendMessage} disabled={isTyping} />
+        <div className="max-w-4xl mx-auto">
+          <ChatInput onSendMessage={onSendMessage} disabled={isTyping} />
+        </div>
       </div>
     </div>
   );

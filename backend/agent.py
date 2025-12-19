@@ -41,7 +41,7 @@ When answering questions:
 - Use document chunks to provide specific details
 - Supplement with web search if needed
 - Provide comprehensive and accurate responses based on the available data""",
-    tools=[websearch, search_knowledge_base],
+    tools=[search_knowledge_base],
     model=model
 )
 

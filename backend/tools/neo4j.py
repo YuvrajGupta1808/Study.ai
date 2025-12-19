@@ -66,8 +66,9 @@ class Neo4jVectorTool:
             if not self.rag:
                 return {"error": "Neo4j not properly initialized"}
             
-            # Perform GraphRAG search
-            response = self.rag.search(query, top_k=top_k)
+            # Perform GraphRAG search with retriever_config
+            retriever_config = {"top_k": top_k}
+            response = self.rag.search(query, retriever_config=retriever_config)
             
             return {
                 "answer": response.answer,

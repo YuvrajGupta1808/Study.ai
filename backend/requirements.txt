@@ -10,3 +10,4 @@ neo4j-graphrag
 PyPDF2
 python-magic
 reportlab
+memmachine

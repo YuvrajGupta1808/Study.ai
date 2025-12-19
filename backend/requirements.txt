@@ -1,0 +1,12 @@
+strands-agents[openai]
+strands-agents-tools
+ddgs
+python-dotenv
+fastapi
+uvicorn
+python-multipart
+neo4j
+neo4j-graphrag
+PyPDF2
+python-magic
+reportlab

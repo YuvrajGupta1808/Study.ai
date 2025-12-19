@@ -114,13 +114,45 @@ const Index = () => {
     setMessages([]);
     
     // Generate new session ID
-    const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
     sessionStorage.setItem('knowledgeforge_session_id', newSessionId);
     
     toast({
       title: "New chat started",
       description: "Previous conversation cleared. Your memories are preserved.",
     });
+  }, [toast]);
+
+  const handleClearAll = useCallback(async () => {
+    try {
+      toast({
+        title: "Clearing all data...",
+        description: "This may take a moment",
+      });
+
+      const result = await apiService.clearAll();
+      
+      // Clear local state
+      setMessages([]);
+      setDocuments([]);
+      setStats({ documents: 0, entities: 0, relationships: 0 });
+      
+      // Generate new session ID
+      const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+      sessionStorage.setItem('knowledgeforge_session_id', newSessionId);
+      
+      toast({
+        title: result.status === "success" ? "All data cleared" : "Partially cleared",
+        description: result.message,
+        variant: result.status === "success" ? "default" : "destructive",
+      });
+    } catch (error) {
+      toast({
+        title: "Clear failed",
+        description: error instanceof Error ? error.message : "Failed to clear data",
+        variant: "destructive",
+      });
+    }
   }, [toast]);
 
   return (
@@ -151,6 +183,7 @@ const Index = () => {
               isTyping={isTyping}
               onSendMessage={handleSendMessage}
               onNewChat={handleNewChat}
+              onClearAll={handleClearAll}
               hasDocuments={documents.length > 0}
             />
           </div>

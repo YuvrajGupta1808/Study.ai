@@ -43,8 +43,10 @@ class Neo4jSetup:
             with self.driver.session() as session:
                 session.run("MATCH (n) DETACH DELETE n")
                 print("✅ Database cleared")
+                return True
         except Exception as e:
             print(f"❌ Database clear failed: {e}")
+            return False
     
     def close(self):
         """Close database connection"""

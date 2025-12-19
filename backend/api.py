@@ -12,8 +12,9 @@ import tempfile
 import shutil
 
 from dotenv import load_dotenv
-from structure.neo4j.setup import upload
+from structure.neo4j.setup import upload, Neo4jSetup
 from agent import docs_agent
+from tools.memory import clear_all_memories
 
 # Load environment variables
 load_dotenv()
@@ -248,6 +249,49 @@ async def delete_document(doc_id: str):
     global documents_db
     documents_db = [doc for doc in documents_db if doc["id"] != doc_id]
     return {"status": "success", "message": f"Document {doc_id} deleted"}
+
+@app.post("/api/clear")
+async def clear_all():
+    """
+    Clear all RAG documents, memories, and start a new session
+    """
+    try:
+        results = {
+            "neo4j_cleared": False,
+            "memories_cleared": False,
+            "documents_cleared": False,
+            "stats_reset": False
+        }
+        
+        # Clear Neo4j database
+        setup = Neo4jSetup()
+        if setup.connect():
+            results["neo4j_cleared"] = setup.clear_database()
+            setup.close()
+        
+        # Clear MemMachine memories
+        memory_result = clear_all_memories()
+        results["memories_cleared"] = memory_result.get("success", False)
+        
+        # Clear in-memory documents
+        global documents_db, stats_db
+        documents_db = []
+        results["documents_cleared"] = True
+        
+        # Reset stats
+        stats_db = {"documents": 0, "entities": 0, "relationships": 0}
+        results["stats_reset"] = True
+        
+        success = all(results.values())
+        
+        return {
+            "status": "success" if success else "partial",
+            "message": "All data cleared successfully" if success else "Some operations failed",
+            "details": results
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error clearing data: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

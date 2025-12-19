@@ -1,5 +1,5 @@
 import type { ChatMessage as Message } from '@/types';
-import { Plus, Sparkles } from 'lucide-react';
+import { Plus, Sparkles, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import ChatInput from './ChatInput';
 import ChatMessage from './ChatMessage';
@@ -21,6 +21,7 @@ interface ChatPanelProps {
   isTyping: boolean;
   onSendMessage: (message: string) => void;
   onNewChat: () => void;
+  onClearAll: () => void;
   hasDocuments: boolean;
 }
 
@@ -54,9 +55,10 @@ const WelcomeMessage = () => (
   </div>
 );
 
-const ChatPanel = ({ messages, isTyping, onSendMessage, onNewChat, hasDocuments }: ChatPanelProps) => {
+const ChatPanel = ({ messages, isTyping, onSendMessage, onNewChat, onClearAll, hasDocuments }: ChatPanelProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showNewChatDialog, setShowNewChatDialog] = useState(false);
+  const [showClearAllDialog, setShowClearAllDialog] = useState(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -75,21 +77,45 @@ const ChatPanel = ({ messages, isTyping, onSendMessage, onNewChat, hasDocuments 
     onNewChat();
   };
 
+  const handleClearAllClick = () => {
+    setShowClearAllDialog(true);
+  };
+
+  const confirmClearAll = () => {
+    setShowClearAllDialog(false);
+    onClearAll();
+  };
+
   return (
     <div className="flex flex-col h-full bg-background/30 backdrop-blur-sm">
-      {/* Header with New Chat button */}
-      {messages.length > 0 && (
+      {/* Header with New Chat and Clear All buttons */}
+      {(messages.length > 0 || hasDocuments) && (
         <div className="flex items-center justify-between p-4 border-b border-border/50 bg-background/50 backdrop-blur-md">
           <h3 className="text-sm font-medium text-foreground">Chat</h3>
-          <Button
-            onClick={handleNewChatClick}
-            variant="outline"
-            size="sm"
-            className="gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            New Chat
-          </Button>
+          <div className="flex gap-2">
+            {messages.length > 0 && (
+              <Button
+                onClick={handleNewChatClick}
+                variant="outline"
+                size="sm"
+                className="gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                New Chat
+              </Button>
+            )}
+            {hasDocuments && (
+              <Button
+                onClick={handleClearAllClick}
+                variant="outline"
+                size="sm"
+                className="gap-2 text-destructive hover:text-destructive"
+              >
+                <Trash2 className="w-4 h-4" />
+                Clear All
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
@@ -106,6 +132,24 @@ const ChatPanel = ({ messages, isTyping, onSendMessage, onNewChat, hasDocuments 
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmNewChat}>
               Start New Chat
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Clear All Confirmation Dialog */}
+      <AlertDialog open={showClearAllDialog} onOpenChange={setShowClearAllDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear everything?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete all documents, RAG data, memories, and conversations. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmClearAll} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Clear Everything
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

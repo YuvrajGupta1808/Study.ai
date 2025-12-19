@@ -103,6 +103,19 @@ class ApiService {
 
         if (!response.ok) throw new Error('Failed to delete document');
     }
+
+    async clearAll(): Promise<{ status: string; message: string; details: any }> {
+        const response = await fetch(`${this.baseUrl}/api/clear`, {
+            method: 'POST',
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to clear data');
+        }
+
+        return response.json();
+    }
 }
 
 export const apiService = new ApiService();

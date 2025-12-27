@@ -256,41 +256,91 @@ async def clear_all():
     Clear all RAG documents, memories, and start a new session
     """
     try:
+        print("\n=== Starting Clear All Operation ===")
         results = {
             "neo4j_cleared": False,
             "memories_cleared": False,
             "documents_cleared": False,
             "stats_reset": False
         }
+        errors = []
         
-        # Clear Neo4j database
-        setup = Neo4jSetup()
-        if setup.connect():
-            results["neo4j_cleared"] = setup.clear_database()
-            setup.close()
+        # Clear Neo4j database (don't close connection, just clear data)
+        try:
+            print("Clearing Neo4j database...")
+            setup = Neo4jSetup()
+            if setup.connect():
+                results["neo4j_cleared"] = setup.clear_database()
+                print(f"Neo4j clear result: {results['neo4j_cleared']}")
+                
+                # Reset the Neo4j tool retriever so it reinitializes on next search
+                if results["neo4j_cleared"]:
+                    from tools.neo4j import get_neo4j_tool
+                    neo4j_tool = get_neo4j_tool()
+                    neo4j_tool.reset_retriever()
+                    print("✅ Neo4j retriever reset")
+            else:
+                errors.append("Failed to connect to Neo4j")
+                print("❌ Failed to connect to Neo4j")
+        except Exception as e:
+            errors.append(f"Neo4j error: {str(e)}")
+            print(f"❌ Neo4j error: {e}")
+            import traceback
+            traceback.print_exc()
         
         # Clear MemMachine memories
-        memory_result = clear_all_memories()
-        results["memories_cleared"] = memory_result.get("success", False)
+        try:
+            print("Clearing MemMachine memories...")
+            memory_result = clear_all_memories()
+            results["memories_cleared"] = memory_result.get("success", False)
+            print(f"Memory clear result: {results['memories_cleared']}")
+            
+            # If skipped or warning, still consider it a success but note it
+            if memory_result.get("skipped") or memory_result.get("warning"):
+                print(f"⚠️ Memory clear note: {memory_result.get('message')}")
+            elif not results["memories_cleared"]:
+                errors.append(f"Memory clear: {memory_result.get('message', 'Unknown error')}")
+        except Exception as e:
+            errors.append(f"Memory error: {str(e)}")
+            print(f"❌ Memory error: {e}")
         
         # Clear in-memory documents
-        global documents_db, stats_db
-        documents_db = []
-        results["documents_cleared"] = True
+        try:
+            print("Clearing in-memory documents...")
+            global documents_db, stats_db
+            documents_db = []
+            results["documents_cleared"] = True
+            print("✅ Documents cleared")
+        except Exception as e:
+            errors.append(f"Documents error: {str(e)}")
+            print(f"❌ Documents error: {e}")
         
         # Reset stats
-        stats_db = {"documents": 0, "entities": 0, "relationships": 0}
-        results["stats_reset"] = True
+        try:
+            print("Resetting stats...")
+            stats_db = {"documents": 0, "entities": 0, "relationships": 0}
+            results["stats_reset"] = True
+            print("✅ Stats reset")
+        except Exception as e:
+            errors.append(f"Stats error: {str(e)}")
+            print(f"❌ Stats error: {e}")
         
         success = all(results.values())
+        print(f"\n=== Clear All Complete ===")
+        print(f"Success: {success}")
+        print(f"Results: {results}")
+        print(f"Errors: {errors}")
         
         return {
             "status": "success" if success else "partial",
-            "message": "All data cleared successfully" if success else "Some operations failed",
+            "message": "All data cleared successfully" if success else f"Some operations failed: {', '.join(errors)}",
             "details": results
         }
         
     except Exception as e:
+        print(f"❌ Critical error in clear_all: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error clearing data: {str(e)}")
 
 if __name__ == "__main__":

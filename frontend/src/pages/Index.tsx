@@ -141,12 +141,18 @@ const Index = () => {
       const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
       sessionStorage.setItem('knowledgeforge_session_id', newSessionId);
       
+      // Show detailed results
+      const detailsMsg = result.details ? 
+        `Neo4j: ${result.details.neo4j_cleared ? '✓' : '✗'}, Memories: ${result.details.memories_cleared ? '✓' : '✗'}, Docs: ${result.details.documents_cleared ? '✓' : '✗'}` :
+        result.message;
+      
       toast({
         title: result.status === "success" ? "All data cleared" : "Partially cleared",
-        description: result.message,
+        description: detailsMsg,
         variant: result.status === "success" ? "default" : "destructive",
       });
     } catch (error) {
+      console.error('Clear all error:', error);
       toast({
         title: "Clear failed",
         description: error instanceof Error ? error.message : "Failed to clear data",
